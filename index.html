@@ -162,6 +162,56 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="lock-screen" id="lock-screen">
+  <div class="lock-box">
+    <div class="lock-logo">Páginas <span>//</span> Instagram</div>
+    <div class="lock-icon">🔒</div>
+    <div class="lock-label">senha de acesso</div>
+    <input class="lock-input" id="lock-input" type="password" placeholder="••••••••••" />
+    <button class="lock-btn" onclick="checkPassword()">entrar</button>
+    <div class="lock-error" id="lock-error"></div>
+  </div>
+</div>
+
+<style>
+  .lock-screen { position: fixed; inset: 0; background: #0e0e10; display: flex; align-items: center; justify-content: center; z-index: 9999; }
+  .lock-box { width: 100%; max-width: 320px; padding: 36px 32px; background: #16161a; border: 0.5px solid rgba(255,255,255,0.1); border-radius: 16px; text-align: center; }
+  .lock-logo { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #6e6e7a; text-transform: uppercase; margin-bottom: 28px; }
+  .lock-logo span { color: #c8f135; }
+  .lock-icon { font-size: 28px; margin-bottom: 16px; }
+  .lock-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #6e6e7a; text-transform: uppercase; margin-bottom: 10px; }
+  .lock-input { width: 100%; background: #1e1e24; border: 0.5px solid rgba(255,255,255,0.13); border-radius: 10px; padding: 10px 14px; font-family: 'DM Mono', monospace; font-size: 14px; color: #f0f0f2; outline: none; text-align: center; letter-spacing: 0.08em; margin-bottom: 14px; }
+  .lock-input:focus { border-color: #c8f135; }
+  .lock-btn { width: 100%; background: #c8f135; border: none; border-radius: 10px; padding: 10px; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; color: #0e0e10; cursor: pointer; transition: opacity 0.12s; }
+  .lock-btn:hover { opacity: 0.88; }
+  .lock-error { font-family: 'DM Mono', monospace; font-size: 11px; color: #ff5a5a; margin-top: 10px; min-height: 16px; }
+</style>
+
+<script>
+const SENHA = 'CRF120900@';
+
+function checkPassword() {
+  const val = document.getElementById('lock-input').value;
+  if (val === SENHA) {
+    document.getElementById('lock-screen').style.display = 'none';
+    sessionStorage.setItem('auth', '1');
+    loadAll();
+  } else {
+    document.getElementById('lock-error').textContent = 'senha incorreta';
+    document.getElementById('lock-input').value = '';
+    document.getElementById('lock-input').focus();
+  }
+}
+
+document.getElementById('lock-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') checkPassword();
+});
+
+if (sessionStorage.getItem('auth') === '1') {
+  document.getElementById('lock-screen').style.display = 'none';
+}
+</script>
+
 <script>
 const SUPABASE_URL = 'https://tzcojmolqxwrsrmnewlt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6Y29qbW9scXh3cnNybW5ld2x0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTcwMTIsImV4cCI6MjA5NDE5MzAxMn0.QYbgVlmUWZEhhLDH_lnoU0qCUBx9IGe62piFvfePjQI';
