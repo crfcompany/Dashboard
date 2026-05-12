@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Páginas Instagram</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0f0f2;
+    --muted: #6e6e7a;
+    --accent: #c8f135;
+    --accent-dim: rgba(200,241,53,0.12);
+    --accent-text: #0e0e10;
+    --red: #ff5a5a;
+    --red-dim: rgba(255,90,90,0.1);
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; padding: 40px 24px 80px; }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 40px; padding-bottom: 24px; border-bottom: 0.5px solid var(--border); }
+  .logo { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; }
+  .logo span { color: var(--accent); }
+  .header-date { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  .total-section { text-align: center; padding: 48px 0 52px; }
+  .total-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase; margin-bottom: 16px; }
+  .total-num { font-family: var(--mono); font-size: 72px; font-weight: 500; color: var(--accent); line-height: 1; letter-spacing: -0.02em; }
+  .total-pages-count { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 12px; }
+
+  .divider { height: 0.5px; background: var(--border); margin: 0 0 28px; }
+  .section-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+
+  .pages-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 36px; }
+
+  .page-row { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; display: flex; align-items: flex-start; gap: 16px; transition: border-color 0.15s; }
+  .page-row:hover { border-color: var(--border2); }
+
+  .page-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; font-weight: 500; flex-shrink: 0; margin-top: 2px; }
+  .page-main { flex: 1; min-width: 0; }
+  .page-handle { font-weight: 500; font-size: 14px; color: var(--text); }
+  .page-niche { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .page-history { margin-top: 10px; display: none; }
+  .page-history.open { display: block; }
+  .hist-section-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 6px; margin-top: 10px; }
+  .history-list { border-left: 1.5px solid var(--border2); padding-left: 14px; display: flex; flex-direction: column; gap: 6px; }
+  .history-item { display: flex; align-items: center; gap: 10px; }
+  .history-date { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; min-width: 80px; }
+  .history-val { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .history-delta { font-family: var(--mono); font-size: 10px; }
+  .delta-up { color: var(--accent); }
+  .delta-down { color: var(--red); }
+  .delta-zero { color: var(--muted); }
+
+  .page-right { text-align: right; flex-shrink: 0; }
+  .followers-num { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--text); line-height: 1; }
+  .followers-label { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .trend-badge { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 99px; margin-top: 5px; }
+  .trend-up { background: var(--accent-dim); color: var(--accent); }
+  .trend-down { background: var(--red-dim); color: var(--red); }
+  .trend-zero { background: rgba(255,255,255,0.05); color: var(--muted); }
+
+  .page-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; align-items: flex-end; }
+  .btn-icon { background: transparent; border: 0.5px solid var(--border); border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; font-family: var(--mono); transition: all 0.12s; white-space: nowrap; }
+  .btn-icon:hover { border-color: var(--border2); color: var(--text); background: var(--surface2); }
+  .btn-icon.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+  .btn-icon.accent:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  .add-section { background: var(--surface); border: 0.5px dashed var(--border2); border-radius: var(--radius-lg); padding: 20px; }
+  .add-section-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+  .add-fields { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  input[type="text"], input[type="number"] { background: var(--surface2); border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 8px 12px; font-family: var(--mono); font-size: 12px; color: var(--text); outline: none; transition: border-color 0.12s; }
+  input[type="text"]:focus, input[type="number"]:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+  .inp-handle { width: 160px; }
+  .inp-niche { width: 150px; }
+  .inp-followers { width: 120px; }
+
+  .btn-add { background: var(--accent); border: none; border-radius: var(--radius); padding: 8px 18px; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--accent-text); cursor: pointer; transition: opacity 0.12s; }
+  .btn-add:hover { opacity: 0.88; }
+  .btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--radius-lg); padding: 28px; width: 100%; max-width: 360px; }
+  .modal-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+  .modal-handle { font-weight: 500; font-size: 16px; color: var(--text); margin-bottom: 20px; }
+  .modal-current { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .modal-input { width: 100%; margin-bottom: 16px; font-size: 20px !important; padding: 12px 14px !important; }
+  .modal-niche-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+  .modal-niche-input { width: 100%; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-cancel { background: transparent; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 8px 16px; font-family: var(--mono); font-size: 12px; color: var(--muted); cursor: pointer; }
+  .btn-cancel:hover { color: var(--text); }
+  .btn-save { background: var(--accent); border: none; border-radius: var(--radius); padding: 8px 20px; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--accent-text); cursor: pointer; }
+  .btn-save:hover { opacity: 0.88; }
+  .btn-save:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .toast { position: fixed; bottom: 28px; right: 28px; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 10px 18px; font-family: var(--mono); font-size: 12px; color: var(--text); opacity: 0; transform: translateY(8px); transition: all 0.2s; pointer-events: none; z-index: 200; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.ok { border-color: var(--accent); color: var(--accent); }
+  .toast.err { border-color: var(--red); color: var(--red); }
+
+  .loading-msg { text-align: center; padding: 40px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">Páginas <span>//</span> Instagram</div>
+    <div class="header-date" id="header-date"></div>
+  </header>
+
+  <div class="total-section">
+    <div class="total-label">total de seguidores</div>
+    <div class="total-num" id="total-num">—</div>
+    <div class="total-pages-count" id="total-pages-label">carregando...</div>
+  </div>
+
+  <div class="divider"></div>
+  <div class="section-label">páginas cadastradas</div>
+  <div class="pages-list" id="pages-list"><div class="loading-msg">carregando...</div></div>
+
+  <div class="add-section">
+    <div class="add-section-title">adicionar página</div>
+    <div class="add-fields">
+      <input class="inp-handle" id="inp-handle" type="text" placeholder="@handle" />
+      <input class="inp-niche" id="inp-niche" type="text" placeholder="nicho" />
+      <input class="inp-followers" id="inp-followers" type="number" placeholder="seguidores" min="0" />
+      <button class="btn-add" id="btn-add" onclick="addPage()">+ adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOverlay(event)">
+  <div class="modal">
+    <div class="modal-title">atualizar seguidores</div>
+    <div class="modal-handle" id="modal-handle"></div>
+    <div class="modal-current" id="modal-current"></div>
+    <input class="modal-input" id="modal-input" type="number" min="0" placeholder="novo valor" />
+    <div class="modal-niche-label">nicho</div>
+    <input class="modal-niche-input" id="modal-niche" type="text" placeholder="nicho da página" />
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">cancelar</button>
+      <button class="btn-save" id="btn-save" onclick="saveEdit()">salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://tzcojmolqxwrsrmnewlt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6Y29qbW9scXh3cnNybW5ld2x0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTcwMTIsImV4cCI6MjA5NDE5MzAxMn0.QYbgVlmUWZEhhLDH_lnoU0qCUBx9IGe62piFvfePjQI';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const AVATARS = [
+  { bg: '#1d2b1d', text: '#c8f135' },
+  { bg: '#1a1d2e', text: '#5ab4ff' },
+  { bg: '#2a1a1e', text: '#ff8fa3' },
+  { bg: '#1e2828', text: '#5dffd3' },
+  { bg: '#2a2218', text: '#ffc96e' },
+  { bg: '#221828', text: '#c49eff' },
+];
+
+let pages = [];
+let histories = {};
+let editingId = null;
+let openHistories = {};
+
+function fmt(n) {
+  n = Number(n);
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.', ',') + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace('.', ',') + 'k';
+  return n.toLocaleString('pt-BR');
+}
+function fmtFull(n) { return Number(n).toLocaleString('pt-BR'); }
+function fmtDate(s) {
+  const str = s ? s.slice(0, 10) : '';
+  if (!str) return '';
+  const [y, m, d] = str.split('-');
+  return d + '/' + m + '/' + y;
+}
+function initials(handle) { return handle.replace('@', '').slice(0, 2).toUpperCase(); }
+
+function toast(msg, type) {
+  type = type || 'ok';
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(function() { el.className = 'toast'; }, 2500);
+}
+
+async function loadAll() {
+  const { data: pData, error } = await db.from('pages').select('*').order('followers', { ascending: false });
+  if (error) { toast('erro ao carregar', 'err'); return; }
+  pages = pData || [];
+
+  const { data: hData } = await db.from('history').select('*').order('recorded_at');
+  histories = {};
+  if (hData) {
+    hData.forEach(function(h) {
+      if (!histories[h.page_id]) histories[h.page_id] = [];
+      histories[h.page_id].push(h);
+    });
+  }
+  render();
+}
+
+function render() {
+  const total = pages.reduce(function(s, p) { return s + (p.followers || 0); }, 0);
+  document.getElementById('total-num').textContent = fmtFull(total);
+  document.getElementById('total-pages-label').textContent =
+    pages.length + (pages.length === 1 ? ' página cadastrada' : ' páginas cadastradas');
+
+  const now = new Date();
+  document.getElementById('header-date').textContent =
+    now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+
+  const list = document.getElementById('pages-list');
+  list.innerHTML = '';
+
+  if (pages.length === 0) {
+    list.innerHTML = '<div class="loading-msg">nenhuma página cadastrada.</div>';
+    return;
+  }
+
+  pages.forEach(function(p, i) {
+    const col = AVATARS[i % AVATARS.length];
+    const hist = (histories[p.id] || []).slice().reverse();
+    const histOpen = openHistories[p.id] || false;
+
+    let trendHTML = '';
+    if (hist.length >= 2) {
+      const d = hist[0].followers - hist[1].followers;
+      const sign = d > 0 ? '+' : '';
+      const cls = d > 0 ? 'trend-up' : d < 0 ? 'trend-down' : 'trend-zero';
+      trendHTML = '<div class="trend-badge ' + cls + '">' + sign + fmt(d) + '</div>';
+    }
+
+    let histHTML = '';
+    if (hist.length > 0) {
+      histHTML = hist.map(function(h, idx) {
+        const prev = hist[idx + 1];
+        let deltaHTML = '';
+        if (prev) {
+          const d = h.followers - prev.followers;
+          const sign = d > 0 ? '+' : '';
+          const cls = d > 0 ? 'delta-up' : d < 0 ? 'delta-down' : 'delta-zero';
+          deltaHTML = '<span class="history-delta ' + cls + '">' + sign + fmt(d) + '</span>';
+        }
+        return '<div class="history-item">' +
+          '<span class="history-date">' + fmtDate(h.recorded_at) + '</span>' +
+          '<span class="history-val">' + fmtFull(h.followers) + '</span>' +
+          deltaHTML +
+          '</div>';
+      }).join('');
+    } else {
+      histHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--muted);">sem histórico</div>';
+    }
+
+    const row = document.createElement('div');
+    row.className = 'page-row';
+    row.innerHTML =
+      '<div class="page-avatar" style="background:' + col.bg + ';color:' + col.text + ';">' + initials(p.handle) + '</div>' +
+      '<div class="page-main">' +
+        '<div class="page-handle">' + p.handle + '</div>' +
+        '<div class="page-niche">' + (p.niche || '') + '</div>' +
+        '<div class="page-history' + (histOpen ? ' open' : '') + '" id="hist-' + p.id + '">' +
+          '<div class="hist-section-label">HISTÓRICO</div>' +
+          '<div class="history-list">' + histHTML + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="page-right">' +
+        '<div class="followers-num">' + fmt(p.followers) + '</div>' +
+        '<div class="followers-label">seguidores</div>' +
+        trendHTML +
+      '</div>' +
+      '<div class="page-actions">' +
+        '<button class="btn-icon accent" onclick="openModal(' + p.id + ')">↑ atualizar</button>' +
+        '<button class="btn-icon" onclick="toggleHistory(' + p.id + ')">⌕ histórico</button>' +
+        '<button class="btn-icon danger" onclick="deletePage(' + p.id + ')">✕ remover</button>' +
+      '</div>';
+    list.appendChild(row);
+  });
+}
+
+function toggleHistory(id) {
+  openHistories[id] = !openHistories[id];
+  render();
+}
+
+function openModal(id) {
+  const p = pages.find(function(x) { return x.id === id; });
+  if (!p) return;
+  editingId = id;
+  document.getElementById('modal-handle').textContent = p.handle;
+  document.getElementById('modal-current').textContent = 'atual: ' + fmtFull(p.followers) + ' seguidores';
+  document.getElementById('modal-input').value = p.followers;
+  document.getElementById('modal-niche').value = p.niche || '';
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(function() { document.getElementById('modal-input').focus(); }, 80);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingId = null;
+}
+
+function closeModalOverlay(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+async function saveEdit() {
+  if (!editingId) return;
+  const val = parseInt(document.getElementById('modal-input').value);
+  if (isNaN(val) || val < 0) { toast('valor inválido', 'err'); return; }
+  const newNiche = document.getElementById('modal-niche').value.trim();
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const updateData = { followers: val, niche: newNiche || 'sem nicho' };
+
+  const { error: updErr } = await db.from('pages').update(updateData).eq('id', editingId);
+  if (updErr) { toast('erro ao salvar', 'err'); btn.disabled = false; return; }
+
+  const hist = histories[editingId] || [];
+  const last = hist[hist.length - 1];
+  if (last && last.recorded_at && last.recorded_at.slice(0, 10) === today) {
+    await db.from('history').update({ followers: val }).eq('id', last.id);
+  } else {
+    await db.from('history').insert({ page_id: editingId, followers: val, recorded_at: today });
+  }
+
+  closeModal();
+  btn.disabled = false;
+  toast('atualizado ✓');
+  await loadAll();
+}
+
+async function addPage() {
+  let handle = document.getElementById('inp-handle').value.trim();
+  const niche = document.getElementById('inp-niche').value.trim();
+  const followers = parseInt(document.getElementById('inp-followers').value);
+  if (!handle || isNaN(followers) || followers < 0) { toast('preencha handle e seguidores', 'err'); return; }
+  if (!handle.startsWith('@')) handle = '@' + handle;
+
+  const btn = document.getElementById('btn-add');
+  btn.disabled = true;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data, error } = await db.from('pages').insert({ handle: handle, niche: niche || 'sem nicho', followers: followers }).select().single();
+  if (error) { toast('erro ao adicionar', 'err'); btn.disabled = false; return; }
+  await db.from('history').insert({ page_id: data.id, followers: followers, recorded_at: today });
+
+  document.getElementById('inp-handle').value = '';
+  document.getElementById('inp-niche').value = '';
+  document.getElementById('inp-followers').value = '';
+  btn.disabled = false;
+  toast('página adicionada ✓');
+  await loadAll();
+}
+
+async function deletePage(id) {
+  if (!confirm('Remover esta página e todo o histórico?')) return;
+  const { error } = await db.from('pages').delete().eq('id', id);
+  if (error) { toast('erro ao remover', 'err'); return; }
+  toast('removida');
+  await loadAll();
+}
+
+document.getElementById('modal-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') saveEdit();
+  if (e.key === 'Escape') closeModal();
+});
+document.getElementById('inp-followers').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') addPage();
+});
+
+loadAll();
+</script>
+</body>
+</html>
